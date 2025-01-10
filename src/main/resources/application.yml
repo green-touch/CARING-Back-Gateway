@@ -26,12 +26,12 @@ spring:
             postLogger: true
       routes:
         ### USER ###
-        ### <SIGN-UP> ###
+        ### </v1/api/users ###
         - id: user-service
           uri: lb://USER-SERVICE
           predicates:
-            - Path=/user-service/users
-            - Method=POST
+            - Path=/user-service/v1/api/users
+            - Method=POST,GET
           filters:
             - RemoveRequestHeader=Cookie
             - RewritePath=/user-service/(?<segment>.*), /$\{segment}
