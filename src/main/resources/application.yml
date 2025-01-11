@@ -80,3 +80,7 @@ management:
     web:
       exposure:
         include: "*"
+
+token:
+  expiration_time: 86400000
+  secret: cf0ac9608f0325faf5e8085deb19c8f6e90140354135b0c509988c36b0a2fa11
