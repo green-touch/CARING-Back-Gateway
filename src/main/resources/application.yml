@@ -26,16 +26,16 @@ spring:
             postLogger: true
       routes:
         ### USER ###
-        ### </v1/api/users ###
+        ### <REGISTER> : PERMIT ###
         - id: user-service
           uri: lb://USER-SERVICE
           predicates:
             - Path=/user-service/v1/api/users
-            - Method=POST,GET
+            - Method=POST
           filters:
             - RemoveRequestHeader=Cookie
             - RewritePath=/user-service/(?<segment>.*), /$\{segment}
-        ### <CHECK> ###
+        ### <USER-CHECK> : PERMIT ###
         - id: user-service
           uri: lb://USER-SERVICE
           predicates:
@@ -44,16 +44,26 @@ spring:
           filters:
             - RemoveRequestHeader=Cookie
             - RewritePath=/user-service/(?<segment>.*), /$\{segment}
-
-#        - id: user-service
-#          uri: lb://USER-SERVICE
-#          predicates:
-#            - Path=/user-service/users/**
-#            - Method=GET
-#          filters:
-#            - RemoveRequestHeader=Cookie
-#            - RewritePath=/user-service/(?<segment>.*), /$\{segment}
-#            - AuthorizationHeaderFilter
+            - AuthorizationHeaderFilter
+        ### <Login, Reissue> : PERMIT ###
+        - id: user-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/user-service/v1/api/tokens/**
+            - Method=POST
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/user-service/(?<segment>.*), /$\{segment}
+        ### <USER-SERVICE> : AUTHORIZATION ###
+        - id: user-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/user-service/v1/api/users/**
+            - Method=GET,POST
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/user-service/(?<segment>.*), /$\{segment}
+            - AuthorizationHeaderFilter
 
         ### <ACTUATOR> ###
         - id: user-service
