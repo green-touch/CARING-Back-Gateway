@@ -1,0 +1,11 @@
+spring:
+  profiles:
+    active: local
+  cloud:
+    config:
+      name: gateway-service
+---
+spring:
+  config:
+    activate:
+      on-profile: local

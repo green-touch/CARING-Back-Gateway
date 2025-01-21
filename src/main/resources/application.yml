@@ -1,21 +1,6 @@
-server:
-  port: 8000
-
-eureka:
-  client:
-    register-with-eureka: true
-    fetch-registry: true
-    service-url:
-      defaultZone: http://127.0.0.1:8761/eureka
-
 spring:
   application:
     name: api-gateway-service
-#  rabbitmq:
-#    host: 127.0.0.1
-#    port: 5672
-#    username: msa_user
-#    password: test123
   cloud:
     gateway:
       default-filters:
@@ -80,7 +65,3 @@ management:
     web:
       exposure:
         include: "*"
-
-token:
-  expiration_time: 86400000
-  secret: cf0ac9608f0325faf5e8085deb19c8f6e90140354135b0c509988c36b0a2fa11
