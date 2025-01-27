@@ -1,5 +1,6 @@
 package com.caring.apigateway_service.filter;
 
+import com.caring.apigateway_service.util.TokenUtil;
 import io.jsonwebtoken.Jwts;
 
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +14,8 @@ import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 @Slf4j
 @Component
@@ -32,14 +35,11 @@ public class AuthorizationHeaderFilter extends AbstractGatewayFilterFactory<Auth
             if (!isContainsKey(request)) {
                 return onError(exchange, "no authorization header", HttpStatus.UNAUTHORIZED);
             }
-            String authorizationHeader = request.getHeaders()
-                    .get(org.springframework.http.HttpHeaders.AUTHORIZATION).get(0);
-            String jwt = authorizationHeader.replace("Bearer ", "");
-
-            if (!isJwtValid(jwt)) {
-                log.info("token secret = {}", env.getProperty("token.secret"));
-                return onError(exchange, "token is not valid", HttpStatus.UNAUTHORIZED);
-            }
+            String jwt = TokenUtil.resolveToken(request);
+            String memberCode = TokenUtil.validateJwt(jwt, List.of(
+                    env.getProperty("token.secret-user"),
+                    env.getProperty("token.secret-manager")
+            ));
             return chain.filter(exchange);
         });
     }
@@ -48,25 +48,41 @@ public class AuthorizationHeaderFilter extends AbstractGatewayFilterFactory<Auth
         return request.getHeaders().containsKey(HttpHeaders.AUTHORIZATION);
     }
 
-    private boolean isJwtValid(String jwt) {
-        boolean returnValue = true;
+    private boolean isJwtValid(String jwt, ServerHttpRequest request) {
         String subject = null;
+
+        // 첫 번째 시크릿 키(user)로 검증
+        if (validateWithSecret(jwt, env.getProperty("token.secret-user"), subject)) {
+            return true;
+        }
+        // 두 번째 시크릿 키(manager)로 검증
+        if (validateWithSecret(jwt, env.getProperty("token.secret-manager"), subject)) {
+            return true;
+        }
+        request.getAttributes().put("memberCode", subject);
+        // 둘 다 실패하면 false 반환
+        return false;
+    }
+
+    private boolean validateWithSecret(String jwt, String secretKey, String subject) {
         try {
-            log.info("jwt = {}", jwt);
+            log.info("Validating with secret: {}", secretKey);
             subject = Jwts.parserBuilder()
-                    .setSigningKey(env.getProperty("token.secret"))
+                    .setSigningKey(secretKey)
                     .build()
                     .parseClaimsJws(jwt)
                     .getBody()
                     .getSubject();
-            log.info("subject = {}", subject);
+
+            log.info("Validated subject = {}", subject);
+
+            // subject가 비어있으면 실패로 간주
+            return subject != null && !subject.isEmpty();
         } catch (Exception exception) {
-            returnValue = false;
+            log.error("JWT validation failed with secret: {}", secretKey, exception);
+            subject = null;
+            return false;
         }
-        if (subject == null || subject.isEmpty()) {
-            returnValue = false;
-        }
-        return returnValue;
     }
 
     private Mono<Void> onError(ServerWebExchange exchange, String err, HttpStatus httpStatus) {
