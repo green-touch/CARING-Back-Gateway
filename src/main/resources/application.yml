@@ -20,6 +20,15 @@ spring:
           filters:
             - RemoveRequestHeader=Cookie
             - RewritePath=/user-service/(?<segment>.*), /$\{segment}
+        ### <REGISTER> : PERMIT ###
+        - id: user-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/user-service/v1/api/managers
+            - Method=POST
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/user-service/(?<segment>.*), /$\{segment}
         ### <USER-CHECK> : PERMIT ###
         - id: user-service
           uri: lb://USER-SERVICE
@@ -29,7 +38,6 @@ spring:
           filters:
             - RemoveRequestHeader=Cookie
             - RewritePath=/user-service/(?<segment>.*), /$\{segment}
-            - AuthorizationHeaderFilter
         ### <Login, Reissue> : PERMIT ###
         - id: user-service
           uri: lb://USER-SERVICE
@@ -43,7 +51,7 @@ spring:
         - id: user-service
           uri: lb://USER-SERVICE
           predicates:
-            - Path=/user-service/v1/api/users/**
+            - Path=/user-service/v1/api/users/**, /user-service/v1/api/managers/**, /user-service/v1/api/shelters/**
             - Method=GET,POST
           filters:
             - RemoveRequestHeader=Cookie
