@@ -13,9 +13,7 @@ import java.util.List;
 @Slf4j
 public class TokenUtil {
 
-    public static String validateJwt(String jwt, List<String> properties) {
-        String[] secretKeys = properties.toArray(new String[0]);
-
+    public static String validateJwt(String jwt, List<String> secretKeys) {
         for (String secret : secretKeys) {
             if (secret != null) {
                 String subject = parseJwt(jwt, secret);
@@ -30,9 +28,8 @@ public class TokenUtil {
 
     private static String parseJwt(String jwt, String secretKey) {
         try {
-            SecretKey key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
             String subject = Jwts.parserBuilder()
-                    .setSigningKey(key)
+                    .setSigningKey(secretKey)
                     .build()
                     .parseClaimsJws(jwt)
                     .getBody()
