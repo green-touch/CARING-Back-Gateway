@@ -40,49 +40,20 @@ public class AuthorizationHeaderFilter extends AbstractGatewayFilterFactory<Auth
                     env.getProperty("token.secret-user"),
                     env.getProperty("token.secret-manager")
             ));
-            return chain.filter(exchange);
+            if (memberCode == null) {
+                return onError(exchange, "Invalid JWT token", HttpStatus.UNAUTHORIZED);
+            }
+
+            // 새로운 요청에 memberCode를 추가
+            ServerHttpRequest mutatedRequest = request.mutate()
+                    .header("member-code", memberCode)
+                    .build();
+            return chain.filter(exchange.mutate().request(mutatedRequest).build());
         });
     }
 
     private static boolean isContainsKey(ServerHttpRequest request) {
         return request.getHeaders().containsKey(HttpHeaders.AUTHORIZATION);
-    }
-
-    private boolean isJwtValid(String jwt, ServerHttpRequest request) {
-        String subject = null;
-
-        // 첫 번째 시크릿 키(user)로 검증
-        if (validateWithSecret(jwt, env.getProperty("token.secret-user"), subject)) {
-            return true;
-        }
-        // 두 번째 시크릿 키(manager)로 검증
-        if (validateWithSecret(jwt, env.getProperty("token.secret-manager"), subject)) {
-            return true;
-        }
-        request.getAttributes().put("memberCode", subject);
-        // 둘 다 실패하면 false 반환
-        return false;
-    }
-
-    private boolean validateWithSecret(String jwt, String secretKey, String subject) {
-        try {
-            log.info("Validating with secret: {}", secretKey);
-            subject = Jwts.parserBuilder()
-                    .setSigningKey(secretKey)
-                    .build()
-                    .parseClaimsJws(jwt)
-                    .getBody()
-                    .getSubject();
-
-            log.info("Validated subject = {}", subject);
-
-            // subject가 비어있으면 실패로 간주
-            return subject != null && !subject.isEmpty();
-        } catch (Exception exception) {
-            log.error("JWT validation failed with secret: {}", secretKey, exception);
-            subject = null;
-            return false;
-        }
     }
 
     private Mono<Void> onError(ServerWebExchange exchange, String err, HttpStatus httpStatus) {

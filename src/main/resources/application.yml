@@ -42,7 +42,7 @@ spring:
         - id: user-service
           uri: lb://USER-SERVICE
           predicates:
-            - Path=/user-service/v1/api/tokens/**
+            - Path=/user-service/v1/api/tokens/**, /user-service/v1/api/managers/super, /user-service/v1/api/managers/submissions/shelters/{uuid}
             - Method=POST
           filters:
             - RemoveRequestHeader=Cookie
@@ -51,7 +51,7 @@ spring:
         - id: user-service
           uri: lb://USER-SERVICE
           predicates:
-            - Path=/user-service/v1/api/users/**, /user-service/v1/api/managers/**, /user-service/v1/api/shelters/**
+            - Path=/user-service/v1/api/users/**, /user-service/v1/api/managers/submissions/{uuid}/permission, /user-service/v1/api/managers/submissions, /user-service/v1/api/shelters/**
             - Method=GET,POST
           filters:
             - RemoveRequestHeader=Cookie
