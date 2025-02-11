@@ -1,5 +1,7 @@
 package com.caring.apigateway_service.util;
 
+import com.caring.apigateway_service.dto.MemberInfo;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
@@ -13,31 +15,30 @@ import java.util.List;
 @Slf4j
 public class TokenUtil {
 
-    public static String validateJwt(String jwt, List<String> secretKeys) {
-        for (String secret : secretKeys) {
-            if (secret != null) {
-                String subject = parseJwt(jwt, secret);
-                if (subject != null) {
-                    return subject;
-                }
-            }
-        }
-
-        return null; // Return null if validation fails for all keys
+    public static MemberInfo validateJwt(String jwt, List<String> secretKeys) {
+        return secretKeys.stream()
+//                .filter(secret -> secret != null) // null 필터링
+                .map(secret -> parseJwt(jwt, secret))
+                .filter(memberInfo -> memberInfo != null)
+                .findFirst()
+                .orElse(null);
     }
 
-    private static String parseJwt(String jwt, String secretKey) {
+    private static MemberInfo parseJwt(String jwt, String secretKey) {
         try {
-            String subject = Jwts.parserBuilder()
+            Claims claims = Jwts.parserBuilder()
                     .setSigningKey(secretKey)
                     .build()
                     .parseClaimsJws(jwt)
-                    .getBody()
-                    .getSubject();
-
-            log.info("Validated subject: {} with secret: {}", subject, secretKey);
-
-            return subject;
+                    .getBody();
+            MemberInfo memberInfo = null;
+            if (claims.getSubject() != null) {
+                 memberInfo = MemberInfo.builder()
+                         .roles(claims.get("auth", String.class))
+                         .memberCode(claims.getSubject())
+                         .build();
+            }
+            return memberInfo;
         } catch (Exception e) {
             log.warn("JWT validation failed with secret: {}", secretKey, e);
             return null;
