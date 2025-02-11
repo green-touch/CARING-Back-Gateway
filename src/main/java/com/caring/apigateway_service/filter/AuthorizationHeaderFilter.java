@@ -1,5 +1,6 @@
 package com.caring.apigateway_service.filter;
 
+import com.caring.apigateway_service.dto.MemberInfo;
 import com.caring.apigateway_service.util.TokenUtil;
 import io.jsonwebtoken.Jwts;
 
@@ -36,17 +37,18 @@ public class AuthorizationHeaderFilter extends AbstractGatewayFilterFactory<Auth
                 return onError(exchange, "no authorization header", HttpStatus.UNAUTHORIZED);
             }
             String jwt = TokenUtil.resolveToken(request);
-            String memberCode = TokenUtil.validateJwt(jwt, List.of(
+            MemberInfo memberInfo = TokenUtil.validateJwt(jwt, List.of(
                     env.getProperty("token.secret-user"),
                     env.getProperty("token.secret-manager")
             ));
-            if (memberCode == null) {
+            if (memberInfo.getMemberCode() == null) {
                 return onError(exchange, "Invalid JWT token", HttpStatus.UNAUTHORIZED);
             }
 
             // 새로운 요청에 memberCode를 추가
             ServerHttpRequest mutatedRequest = request.mutate()
-                    .header("member-code", memberCode)
+                    .header("member-code", memberInfo.getMemberCode())
+                    .header("roles", memberInfo.getRoles())
                     .build();
             return chain.filter(exchange.mutate().request(mutatedRequest).build());
         });
