@@ -2,8 +2,6 @@ package com.caring.apigateway_service.filter;
 
 import com.caring.apigateway_service.dto.MemberInfo;
 import com.caring.apigateway_service.util.TokenUtil;
-import io.jsonwebtoken.Jwts;
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
@@ -20,11 +18,11 @@ import java.util.List;
 
 @Slf4j
 @Component
-public class AuthorizationHeaderFilter extends AbstractGatewayFilterFactory<AuthorizationHeaderFilter.Config> {
+public class ManagerAuthorizationHeaderFilter extends AbstractGatewayFilterFactory<ManagerAuthorizationHeaderFilter.Config> {
 
     private final Environment env;
 
-    public AuthorizationHeaderFilter(Environment environment) {
+    public ManagerAuthorizationHeaderFilter(Environment environment) {
         super(Config.class);
         this.env = environment;
     }
@@ -37,12 +35,10 @@ public class AuthorizationHeaderFilter extends AbstractGatewayFilterFactory<Auth
                 return onError(exchange, "no authorization header", HttpStatus.UNAUTHORIZED);
             }
             String jwt = TokenUtil.resolveToken(request);
-            MemberInfo memberInfo = TokenUtil.validateJwt(jwt, List.of(
-                    env.getProperty("token.secret-user"),
-                    env.getProperty("token.secret-manager")
-            ));
+            MemberInfo memberInfo = TokenUtil.parseJwt(jwt, env.getProperty("token.secret-manager"));
+
             if (memberInfo.getMemberCode() == null) {
-                return onError(exchange, "Invalid JWT token", HttpStatus.UNAUTHORIZED);
+                return onError(exchange, "Invalid MANGER JWT token", HttpStatus.UNAUTHORIZED);
             }
 
             // 새로운 요청에 memberCode를 추가
