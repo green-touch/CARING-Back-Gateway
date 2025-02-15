@@ -15,16 +15,7 @@ import java.util.List;
 @Slf4j
 public class TokenUtil {
 
-    public static MemberInfo validateJwt(String jwt, List<String> secretKeys) {
-        return secretKeys.stream()
-//                .filter(secret -> secret != null) // null 필터링
-                .map(secret -> parseJwt(jwt, secret))
-                .filter(memberInfo -> memberInfo != null)
-                .findFirst()
-                .orElse(null);
-    }
-
-    private static MemberInfo parseJwt(String jwt, String secretKey) {
+    public static MemberInfo parseJwt(String jwt, String secretKey) {
         try {
             Claims claims = Jwts.parserBuilder()
                     .setSigningKey(secretKey)

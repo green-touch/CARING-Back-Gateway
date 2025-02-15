@@ -11,52 +11,24 @@ spring:
             postLogger: true
       routes:
         ### USER ###
-        ### <REGISTER> : PERMIT ###
+        ### ACCESS ###
         - id: user-service
           uri: lb://USER-SERVICE
           predicates:
-            - Path=/user-service/v1/api/users
-            - Method=POST
+            - Path=/user-service/v1/api/access/**
           filters:
             - RemoveRequestHeader=Cookie
             - RewritePath=/user-service/(?<segment>.*), /$\{segment}
-        ### <REGISTER> : PERMIT ###
+        ### <USER-SERVICE> : AUTHORIZATION (MANAGER)###
         - id: user-service
           uri: lb://USER-SERVICE
           predicates:
-            - Path=/user-service/v1/api/managers
-            - Method=POST
-          filters:
-            - RemoveRequestHeader=Cookie
-            - RewritePath=/user-service/(?<segment>.*), /$\{segment}
-        ### <USER-CHECK> : PERMIT ###
-        - id: user-service
-          uri: lb://USER-SERVICE
-          predicates:
-            - Path=/user-service/welcome, /user-service/health_check
-            - Method=GET
-          filters:
-            - RemoveRequestHeader=Cookie
-            - RewritePath=/user-service/(?<segment>.*), /$\{segment}
-        ### <Login, Reissue> : PERMIT ###
-        - id: user-service
-          uri: lb://USER-SERVICE
-          predicates:
-            - Path=/user-service/v1/api/tokens/**, /user-service/v1/api/managers/super, /user-service/v1/api/managers/submissions/shelters/{uuid}
-            - Method=POST
-          filters:
-            - RemoveRequestHeader=Cookie
-            - RewritePath=/user-service/(?<segment>.*), /$\{segment}
-        ### <USER-SERVICE> : AUTHORIZATION ###
-        - id: user-service
-          uri: lb://USER-SERVICE
-          predicates:
-            - Path=/user-service/v1/api/users/**, /user-service/v1/api/managers/submissions/{uuid}/permission, /user-service/v1/api/managers/submissions, /user-service/v1/api/shelters/**
+            - Path=/user-service/v1/api/users/**, /user-service/v1/api/managers/**, /user-service/v1/api/shelters/**
             - Method=GET,POST
           filters:
             - RemoveRequestHeader=Cookie
             - RewritePath=/user-service/(?<segment>.*), /$\{segment}
-            - AuthorizationHeaderFilter
+            - ManagerAuthorizationHeaderFilter
 
         ### <ACTUATOR> ###
         - id: user-service
