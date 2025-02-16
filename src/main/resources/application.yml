@@ -12,7 +12,7 @@ spring:
       routes:
         ### USER ###
         ### ACCESS ###
-        - id: user-service
+        - id: user-service-access
           uri: lb://USER-SERVICE
           predicates:
             - Path=/user-service/v1/api/access/**
@@ -20,7 +20,7 @@ spring:
             - RemoveRequestHeader=Cookie
             - RewritePath=/user-service/(?<segment>.*), /$\{segment}
         ### <USER-SERVICE> : AUTHORIZATION (MANAGER)###
-        - id: user-service
+        - id: user-service-manager
           uri: lb://USER-SERVICE
           predicates:
             - Path=/user-service/v1/api/users/**, /user-service/v1/api/managers/**, /user-service/v1/api/shelters/**
@@ -31,11 +31,20 @@ spring:
             - ManagerAuthorizationHeaderFilter
 
         ### <ACTUATOR> ###
-        - id: user-service
+        - id: user-service-actuator
           uri: lb://USER-SERVICE
           predicates:
             - Path=/user-service/actuator/**
             - Method=GET,POST
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/user-service/(?<segment>.*), /$\{segment}
+        ### <SWAGGER> ###
+        - id: user-service-swagger
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/user-service/v3/api-docs/**
+            - Method=GET,POST,PUT,DELETE
           filters:
             - RemoveRequestHeader=Cookie
             - RewritePath=/user-service/(?<segment>.*), /$\{segment}
@@ -45,3 +54,13 @@ management:
     web:
       exposure:
         include: "*"
+
+springdoc:
+  swagger-ui:
+    urls[0]:
+      name: 회원 서비스
+      url: http://${server.address:localhost}:${server.port}/user-service/v3/api-docs
+    tags-sorter: alpha
+    operations-sorter: method
+
+
